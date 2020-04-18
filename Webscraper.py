@@ -22,6 +22,12 @@ class LoginClass(object):
             options.add_argument("incognito")
         if headless:
             options.add_argument("headless")
+        
+        # options.add_argument("disable-gpu")
+        # options.add_argument('window-size=1200x1200')
+        # options.add_argument("remote-debugging-port=9222")
+        # options.add_argument("kiosk")
+
         if os.name == 'nt':
             # path_to_chrome = str(Path('./chromedriver.exe').relative_to('.'))
             path_to_chrome = str(Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
