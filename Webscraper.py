@@ -71,7 +71,6 @@ class LoginClass(object):
                 Path('./ChromeDrivers/Linux/chromedriver').absolute())
         self.browser = Chrome(path_to_chrome, options=options)
 
-    @delay_before(5)
     def logging_in(self, url):
         self.browser.get(url)
 
