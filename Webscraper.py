@@ -111,7 +111,7 @@ class CustomChrome(SeleniumAddons):
 
 class CustomFirefox(SeleniumAddons):
 
-    def __init__(self, geckodriver_path=None, incognito=True, headless=False) -> None:
+    def __init__(self, geckodriver_path=None, incognito=True, headless=False, service_log_path=None) -> None:
         super().__init__()
         options = FirefoxOptions()
         if incognito:
@@ -122,11 +122,13 @@ class CustomFirefox(SeleniumAddons):
         if os.name == 'nt':
             if geckodriver_path is None:
                 geckodriver_path = str(Path('./FirefoxDrivers/Windows/geckodriver.exe').absolute())
+            if service_log_path is None:
+                service_log_path = str(Path('./FirefoxDrivers/Windows/gecko.log').absolute())
         elif os.name == 'posix':
             raise ValueError
         else:
             raise ValueError
-        self.browser = Firefox(executable_path=geckodriver_path, options=options)
+        self.browser = Firefox(executable_path=geckodriver_path, options=options, service_log_path=service_log_path)
 
 if __name__ == '__main__':
     browser_instance = CustomFirefox(incognito=True)
