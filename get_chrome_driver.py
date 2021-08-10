@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import sys
 from pathlib import Path
 
+CHROME_VERSION = 92
 current_platform = sys.platform
 
 dir_platform = {
@@ -27,7 +28,14 @@ if not chromedriver.exists():
     resp = requests.get(
         'https://chromedriver.storage.googleapis.com/?delimiter=/&prefix=')
     soup = BeautifulSoup(resp.text, features="lxml")
-    newest_version = soup.find_all('commonprefixes')[-2].find('prefix').text
+    newest_version = None
+    for segment in soup.find_all('commonprefixes'):
+        if segment.find('prefix').text.split('.')[0] == str(CHROME_VERSION):
+            newest_version = segment.find('prefix').text
+            break
+    if newest_version is None:
+        raise ValueError()
+    
 
     url_platform = {
         'linux1': f'https://chromedriver.storage.googleapis.com/{newest_version}chromedriver_linux64.zip',
@@ -42,7 +50,6 @@ if not chromedriver.exists():
         'win32': './ChromeDrivers/Windows'
     }
     url = url_platform[current_platform]
-
     zip_file = save_dir.joinpath('ChromeDriver.zip')
     file_resp = requests.get(url, allow_redirects=True)
     zip_file.write_bytes(file_resp.content)
