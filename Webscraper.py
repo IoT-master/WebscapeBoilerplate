@@ -3,7 +3,9 @@ from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-# from selenium.webdriver import Firefox, FirefoxProfile
+from selenium.webdriver import Firefox
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+# from selenium.webdriver import FirefoxProfile
 # from selenium.webdriver import PhantomJS
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.wait import WebDriverWait
@@ -77,9 +79,9 @@ class SeleniumAddons(ABC):
                 option.click()
                 break
 
-class LoginClass(SeleniumAddons):
+class CustomChrome(SeleniumAddons):
 
-    def __init__(self, incognito=True, headless=False, brave=False):
+    def __init__(self, incognito=True, headless=False, brave=False) -> None:
         options = ChromeOptions()
 
         # https://stackoverflow.com/questions/64927909/failed-to-read-descriptor-from-node-connection-a-device-attached-to-the-system
@@ -98,27 +100,39 @@ class LoginClass(SeleniumAddons):
 
         if os.name == 'nt':
             # path_to_chrome = str(Path('./chromedriver.exe').relative_to('.'))
-            path_to_chrome = str(
-                Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
+            path_to_chrome = str(Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
         elif os.name == 'posix':
-            path_to_chrome = str(
-                Path('./ChromeDrivers/Mac/chromedriver').absolute())
+            path_to_chrome = str(Path('./ChromeDrivers/Mac/chromedriver').absolute())
         else:
             if brave:
                 options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-            path_to_chrome = str(
-                Path('./ChromeDrivers/Linux/chromedriver').absolute())
+            path_to_chrome = str(Path('./ChromeDrivers/Linux/chromedriver').absolute())
         self.browser = Chrome(path_to_chrome, options=options)
 
-    def logging_in(self, url):
-        self.browser.get(url)
+class CustomFirefox(SeleniumAddons):
 
+    def __init__(self, geckodriver_path=None, incognito=True, headless=False) -> None:
+        super().__init__()
+        options = FirefoxOptions()
+        if incognito:
+            options.add_argument("--incognito")
+        if headless:
+            options.add_argument("--headless")
+
+        if os.name == 'nt':
+            if geckodriver_path is None:
+                geckodriver_path = str(Path('./FirefoxDrivers/Windows/geckodriver.exe').absolute())
+        elif os.name == 'posix':
+            raise ValueError
+        else:
+            raise ValueError
+        self.browser = Firefox(executable_path=geckodriver_path, options=options)
 
 if __name__ == '__main__':
-    fetching_token = LoginClass()
-    fetching_token.logging_in('https://www.google.com')
-    fetching_token.wait_until_name_element_object_found('q')
-    elem = fetching_token.browser.find_element_by_name('q')
+    browser_instance = CustomFirefox(incognito=True)
+    browser_instance.browser.get('https://www.google.com')
+    browser_instance.wait_until_name_element_object_found('q')
+    elem = browser_instance.browser.find_element_by_name('q')
     elem.send_keys('hello')
     elem.send_keys(Keys.RETURN)
 
