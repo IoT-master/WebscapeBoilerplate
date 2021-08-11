@@ -1,4 +1,3 @@
-#!./.env/bin/python3
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -9,7 +8,6 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 # from selenium.webdriver import PhantomJS
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from pathlib import Path
 from selenium.webdriver.common.keys import Keys
 import os
@@ -81,7 +79,7 @@ class SeleniumAddons(ABC):
 
 class CustomChrome(SeleniumAddons):
 
-    def __init__(self, incognito=True, headless=False, brave=False) -> None:
+    def __init__(self, incognito=True, headless=False, brave=False, disable_gpu=False) -> None:
         options = ChromeOptions()
 
         # https://stackoverflow.com/questions/64927909/failed-to-read-descriptor-from-node-connection-a-device-attached-to-the-system
@@ -92,8 +90,8 @@ class CustomChrome(SeleniumAddons):
             options.add_argument("incognito")
         if headless:
             options.add_argument("headless")
-
-        # options.add_argument("disable-gpu")
+        if disable_gpu:
+            options.add_argument("disable-gpu")
         # options.add_argument('window-size=1200x1200')
         # options.add_argument("remote-debugging-port=9222")
         # options.add_argument("kiosk")
@@ -101,12 +99,39 @@ class CustomChrome(SeleniumAddons):
         if os.name == 'nt':
             # path_to_chrome = str(Path('./chromedriver.exe').relative_to('.'))
             path_to_chrome = str(Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
-        elif os.name == 'posix':
+        elif os.name == 'darwin':
             path_to_chrome = str(Path('./ChromeDrivers/Mac/chromedriver').absolute())
-        else:
-            if brave:
-                options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+        elif os.name == 'posix':
             path_to_chrome = str(Path('./ChromeDrivers/Linux/chromedriver').absolute())
+        else:
+            print('OS not supported')
+            raise ValueError
+        self.browser = Chrome(path_to_chrome, options=options)
+
+class CustomBrave(SeleniumAddons):
+
+    def __init__(self, incognito=True, headless=False, disable_gpu=False) -> None:
+        options = ChromeOptions()
+
+        options.add_argument("disable-extensions")
+        if incognito:
+            options.add_argument("incognito")
+        if headless:
+            options.add_argument("headless")
+        if disable_gpu:
+            options.add_argument("disable-gpu")
+
+        if os.name == 'nt':
+            path_to_chrome = str(Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
+            options.binary_location = str(Path('/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe'))
+        elif os.name == 'darwin':
+            path_to_chrome = str(Path('./ChromeDrivers/Mac/chromedriver').absolute())
+        elif os.name == 'posix':
+            options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+            path_to_chrome = str(Path('./ChromeDrivers/Linux/chromedriver').absolute())
+        else:
+            print('OS not supported')
+            raise ValueError
         self.browser = Chrome(path_to_chrome, options=options)
 
 class CustomFirefox(SeleniumAddons):
@@ -131,7 +156,7 @@ class CustomFirefox(SeleniumAddons):
         self.browser = Firefox(executable_path=geckodriver_path, options=options, service_log_path=service_log_path)
 
 if __name__ == '__main__':
-    browser_instance = CustomFirefox(incognito=True)
+    browser_instance = CustomBrave(incognito=False)
     browser_instance.browser.get('https://www.google.com')
     browser_instance.wait_until_name_element_object_found('q')
     elem = browser_instance.browser.find_element_by_name('q')
