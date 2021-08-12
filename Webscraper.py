@@ -1,78 +1,26 @@
-#!./.env/bin/python3
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-# from selenium.webdriver import Firefox, FirefoxProfile
+from selenium.webdriver import Firefox
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+# TODO: Create class for PhantomJS and buildout FirefoxProfile
+# from selenium.webdriver import FirefoxProfile
 # from selenium.webdriver import PhantomJS
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from pathlib import Path
+from selenium.webdriver.common.keys import Keys
 import os
-from time import sleep
+from abc import ABC
 
+class UnrecognizedOSError(Exception):
+    pass
 
-def delay_before(delay):
-    def wrap(f):
-        def wrapped_f(*args):
-            sleep(delay)
-            f(*args)
-        return wrapped_f
-    return wrap
+class ElementNotFound(Exception):
+    pass
 
-def delay_after(delay):
-    def wrap(f):
-        def wrapped_f(*args):
-            f(*args)
-            sleep(delay)
-        return wrapped_f
-    return wrap
-
-
-class DelayBefore(object):
-    def __init__(self, delay):
-        self.delay = delay
-
-    def __call__(self, func):
-        def wrapper(*args):
-            sleep(self.delay)
-            func_return = func(*args)
-            return func_return
-        return wrapper
-
-
-class LoginClass(object):
-
-    def __init__(self, incognito=True, headless=False, brave=False):
-        options = ChromeOptions()
-        options.add_argument("disable-extensions")
-        if incognito:
-            options.add_argument("incognito")
-        if headless:
-            options.add_argument("headless")
-
-        # options.add_argument("disable-gpu")
-        # options.add_argument('window-size=1200x1200')
-        # options.add_argument("remote-debugging-port=9222")
-        # options.add_argument("kiosk")
-
-        if os.name == 'nt':
-            # path_to_chrome = str(Path('./chromedriver.exe').relative_to('.'))
-            path_to_chrome = str(
-                Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
-        elif os.name == 'posix':
-            path_to_chrome = str(
-                Path('./ChromeDrivers/Mac/chromedriver').absolute())
-        else:
-            if brave:
-                options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-            path_to_chrome = str(
-                Path('./ChromeDrivers/Linux/chromedriver').absolute())
-        self.browser = Chrome(path_to_chrome, options=options)
-
-    def logging_in(self, url):
-        self.browser.get(url)
+class SeleniumAddons(ABC):
 
     def wait_until_css_element_object_found(self, css_param, wait_time=10):
         wait = WebDriverWait(self.browser, wait_time)
@@ -136,7 +84,89 @@ class LoginClass(object):
                 option.click()
                 break
 
+class CustomChrome(SeleniumAddons):
+
+    def __init__(self, incognito=True, headless=False, brave=False, disable_gpu=False) -> None:
+        options = ChromeOptions()
+
+        # https://stackoverflow.com/questions/64927909/failed-to-read-descriptor-from-node-connection-a-device-attached-to-the-system
+        options.add_experimental_option('excludeSwitches', ['enable-logging'])
+
+        options.add_argument("disable-extensions")
+        if incognito:
+            options.add_argument("incognito")
+        if headless:
+            options.add_argument("headless")
+        if disable_gpu:
+            options.add_argument("disable-gpu")
+        # options.add_argument('window-size=1200x1200')
+        # options.add_argument("remote-debugging-port=9222")
+        # options.add_argument("kiosk")
+
+        if os.name == 'nt':
+            # path_to_chrome = str(Path('./chromedriver.exe').relative_to('.'))
+            path_to_chrome = str(Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
+        elif os.name == 'darwin':
+            path_to_chrome = str(Path('./ChromeDrivers/Mac/chromedriver').absolute())
+        elif os.name == 'posix':
+            path_to_chrome = str(Path('./ChromeDrivers/Linux/chromedriver').absolute())
+        else:
+            raise UnrecognizedOSError('Unable to recogized Operating System')
+        self.browser = Chrome(path_to_chrome, options=options)
+
+class CustomBrave(SeleniumAddons):
+
+    def __init__(self, incognito=True, headless=False, disable_gpu=False) -> None:
+        options = ChromeOptions()
+
+        options.add_argument("disable-extensions")
+        if incognito:
+            options.add_argument("incognito")
+        if headless:
+            options.add_argument("headless")
+        if disable_gpu:
+            options.add_argument("disable-gpu")
+
+        if os.name == 'nt':
+            path_to_chrome = str(Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
+            options.binary_location = str(Path('/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe'))
+        elif os.name == 'darwin':
+            path_to_chrome = str(Path('./ChromeDrivers/Mac/chromedriver').absolute())
+        elif os.name == 'posix':
+            options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+            path_to_chrome = str(Path('./ChromeDrivers/Linux/chromedriver').absolute())
+        else:
+            raise UnrecognizedOSError('Unable to recogized Operating System')
+        self.browser = Chrome(path_to_chrome, options=options)
+
+class CustomFirefox(SeleniumAddons):
+
+    def __init__(self, geckodriver_path=None, incognito=True, headless=False, service_log_path=None) -> None:
+        super().__init__()
+        options = FirefoxOptions()
+        if incognito:
+            options.add_argument("--incognito")
+        if headless:
+            options.add_argument("--headless")
+
+        if os.name == 'nt':
+            if geckodriver_path is None:
+                geckodriver_path = str(Path('./FirefoxDrivers/Windows/geckodriver.exe').absolute())
+            if service_log_path is None:
+                service_log_path = str(Path('./FirefoxDrivers/Windows/gecko.log').absolute())
+        elif os.name == 'posix':
+            #TODO: Test out this case
+            raise UnrecognizedOSError('Selenium for Firefox not yet impliemented')
+        else:
+            raise UnrecognizedOSError('Unable to recogized Operating System')
+        self.browser = Firefox(executable_path=geckodriver_path, options=options, service_log_path=service_log_path)
 
 if __name__ == '__main__':
-    fetching_token = LoginClass()
-    fetching_token.logging_in('https://www.google.com')
+    browser_instance = CustomBrave(incognito=False)
+    browser_instance.browser.get('https://www.google.com')
+    browser_instance.wait_until_name_element_object_found('q')
+    elem = browser_instance.browser.find_element_by_name('q')
+    elem.send_keys('hello')
+    elem.send_keys(Keys.RETURN)
+    # browser_instance.browser.close()
+
