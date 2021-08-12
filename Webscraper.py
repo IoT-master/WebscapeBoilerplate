@@ -4,6 +4,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
+# TODO: Create class for PhantomJS and buildout FirefoxProfile
 # from selenium.webdriver import FirefoxProfile
 # from selenium.webdriver import PhantomJS
 from selenium.webdriver.common.action_chains import ActionChains
@@ -12,6 +13,12 @@ from pathlib import Path
 from selenium.webdriver.common.keys import Keys
 import os
 from abc import ABC
+
+class UnrecognizedOSError(Exception):
+    pass
+
+class ElementNotFound(Exception):
+    pass
 
 class SeleniumAddons(ABC):
 
@@ -104,8 +111,7 @@ class CustomChrome(SeleniumAddons):
         elif os.name == 'posix':
             path_to_chrome = str(Path('./ChromeDrivers/Linux/chromedriver').absolute())
         else:
-            print('OS not supported')
-            raise ValueError
+            raise UnrecognizedOSError('Unable to recogized Operating System')
         self.browser = Chrome(path_to_chrome, options=options)
 
 class CustomBrave(SeleniumAddons):
@@ -130,8 +136,7 @@ class CustomBrave(SeleniumAddons):
             options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
             path_to_chrome = str(Path('./ChromeDrivers/Linux/chromedriver').absolute())
         else:
-            print('OS not supported')
-            raise ValueError
+            raise UnrecognizedOSError('Unable to recogized Operating System')
         self.browser = Chrome(path_to_chrome, options=options)
 
 class CustomFirefox(SeleniumAddons):
@@ -150,9 +155,10 @@ class CustomFirefox(SeleniumAddons):
             if service_log_path is None:
                 service_log_path = str(Path('./FirefoxDrivers/Windows/gecko.log').absolute())
         elif os.name == 'posix':
-            raise ValueError
+            #TODO: Test out this case
+            raise UnrecognizedOSError('Selenium for Firefox not yet impliemented')
         else:
-            raise ValueError
+            raise UnrecognizedOSError('Unable to recogized Operating System')
         self.browser = Firefox(executable_path=geckodriver_path, options=options, service_log_path=service_log_path)
 
 if __name__ == '__main__':
@@ -162,4 +168,5 @@ if __name__ == '__main__':
     elem = browser_instance.browser.find_element_by_name('q')
     elem.send_keys('hello')
     elem.send_keys(Keys.RETURN)
+    # browser_instance.browser.close()
 
