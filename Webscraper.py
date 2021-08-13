@@ -83,6 +83,13 @@ class SeleniumAddons(ABC):
             if option.text in labels:
                 option.click()
                 break
+    
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exec_type, exec_value, traceback):
+        print('Closing browser instance')
+        self.browser.quit()
 
 class CustomChrome(SeleniumAddons):
 
@@ -162,11 +169,18 @@ class CustomFirefox(SeleniumAddons):
         self.browser = Firefox(executable_path=geckodriver_path, options=options, service_log_path=service_log_path)
 
 if __name__ == '__main__':
-    browser_instance = CustomBrave(incognito=False)
-    browser_instance.browser.get('https://www.google.com')
-    browser_instance.wait_until_name_element_object_found('q')
-    elem = browser_instance.browser.find_element_by_name('q')
+    web_scraper = CustomChrome(incognito=False)
+    web_scraper.browser.get('https://www.google.com')
+    web_scraper.wait_until_name_element_object_found('q')
+    elem = web_scraper.browser.find_element_by_name('q')
     elem.send_keys('hello')
     elem.send_keys(Keys.RETURN)
-    # browser_instance.browser.close()
+    web_scraper.browser.close()
+
+    with CustomChrome(incognito=False) as web_scraper_with_context_manager:
+        web_scraper_with_context_manager.browser.get('https://www.google.com')
+        web_scraper_with_context_manager.wait_until_name_element_object_found('q')
+        elem = web_scraper_with_context_manager.browser.find_element_by_name('q')
+        elem.send_keys('hello')
+        elem.send_keys(Keys.RETURN)
 
