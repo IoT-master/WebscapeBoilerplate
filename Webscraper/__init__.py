@@ -1,4 +1,5 @@
 from selenium.webdriver import Chrome, ChromeOptions
+from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -10,17 +11,20 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.wait import WebDriverWait
 from pathlib import Path
-from selenium.webdriver.common.keys import Keys
 import os
 from abc import ABC
 
-class UnrecognizedOSError(Exception):
+class UnrecognizedOSError(NotImplementedError):
     pass
 
 class ElementNotFound(Exception):
     pass
 
 class SeleniumAddons(ABC):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.browser = WebDriver()
 
     def wait_until_css_element_object_found(self, css_param, wait_time=10):
         wait = WebDriverWait(self.browser, wait_time)
@@ -149,7 +153,6 @@ class CustomBrave(SeleniumAddons):
 class CustomFirefox(SeleniumAddons):
 
     def __init__(self, geckodriver_path=None, incognito=True, headless=False, service_log_path=None) -> None:
-        super().__init__()
         options = FirefoxOptions()
         if incognito:
             options.add_argument("--incognito")
@@ -168,19 +171,5 @@ class CustomFirefox(SeleniumAddons):
             raise UnrecognizedOSError('Unable to recogized Operating System')
         self.browser = Firefox(executable_path=geckodriver_path, options=options, service_log_path=service_log_path)
 
-if __name__ == '__main__':
-    web_scraper = CustomChrome(incognito=False)
-    web_scraper.browser.get('https://www.google.com')
-    web_scraper.wait_until_name_element_object_found('q')
-    elem = web_scraper.browser.find_element_by_name('q')
-    elem.send_keys('hello')
-    elem.send_keys(Keys.RETURN)
-    web_scraper.browser.close()
 
-    with CustomChrome(incognito=False) as web_scraper_with_context_manager:
-        web_scraper_with_context_manager.browser.get('https://www.google.com')
-        web_scraper_with_context_manager.wait_until_name_element_object_found('q')
-        elem = web_scraper_with_context_manager.browser.find_element_by_name('q')
-        elem.send_keys('hello')
-        elem.send_keys(Keys.RETURN)
 
