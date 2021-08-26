@@ -4,7 +4,11 @@ from bs4 import BeautifulSoup
 import os
 from pathlib import Path
 
+<<<<<<< HEAD
 CHROME_VERSION = int(input('Enter the Chrome Browser Version (i.e. 92) => '))
+=======
+CHROME_VERSION = 92
+>>>>>>> d07c3f20fa16bfe0a6e14fe9d10b4205ff6af443
 current_platform = os.name
 
 dir_platform = {
