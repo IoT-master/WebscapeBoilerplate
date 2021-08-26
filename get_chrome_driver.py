@@ -1,25 +1,23 @@
 import zipfile
 import requests
 from bs4 import BeautifulSoup
-import sys
+import os
 from pathlib import Path
 
 CHROME_VERSION = 92
-current_platform = sys.platform
+current_platform = os.name
 
 dir_platform = {
-    'linux1': './ChromeDrivers/Linux',
-    'linux2': './ChromeDrivers/Linux',
+    'posix': './ChromeDrivers/Linux',
     'darwin': './ChromeDrivers/Mac',
-    'win32': './ChromeDrivers/Windows'
+    'nt': './ChromeDrivers/Windows'
 }
 save_dir = Path(dir_platform[current_platform])
 
 chromedriver_platform = {
-    'linux1': 'chromedriver',
-    'linux2': 'chromedriver',
+    'posix': 'chromedriver',
     'darwin': 'chromedriver',
-    'win32': 'chromedriver.exe'
+    'nt': 'chromedriver.exe'
 }
 chromedriver = save_dir.joinpath(chromedriver_platform[current_platform])
 
@@ -38,16 +36,14 @@ if not chromedriver.exists():
     
 
     url_platform = {
-        'linux1': f'https://chromedriver.storage.googleapis.com/{newest_version}chromedriver_linux64.zip',
-        'linux2': f'https://chromedriver.storage.googleapis.com/{newest_version}chromedriver_linux64.zip',
+        'posix': f'https://chromedriver.storage.googleapis.com/{newest_version}chromedriver_linux64.zip',
         'darwin': f'https://chromedriver.storage.googleapis.com/{newest_version}chromedriver_mac64.zip',
-        'win32': f'https://chromedriver.storage.googleapis.com/{newest_version}chromedriver_win32.zip'
+        'nt': f'https://chromedriver.storage.googleapis.com/{newest_version}chromedriver_win32.zip'
     }
     dir_platform = {
-        'linux1': './ChromeDrivers/Linux',
-        'linux2': './ChromeDrivers/Linux',
+        'posix': './ChromeDrivers/Linux',
         'darwin': './ChromeDrivers/Mac',
-        'win32': './ChromeDrivers/Windows'
+        'nt': './ChromeDrivers/Windows'
     }
     url = url_platform[current_platform]
     zip_file = save_dir.joinpath('ChromeDriver.zip')
