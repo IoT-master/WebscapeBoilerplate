@@ -5,9 +5,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
-# TODO: Create class for PhantomJS and buildout FirefoxProfile
+# TODO: Buildout FirefoxProfile
 # from selenium.webdriver import FirefoxProfile
-# from selenium.webdriver import PhantomJS
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.wait import WebDriverWait
 from pathlib import Path
@@ -31,7 +30,7 @@ class SeleniumAddons(ABC):
         wait.until(EC.visibility_of_element_located(
             (By.CSS_SELECTOR, css_param)))
 
-    def scroll_down_one_page(self, lines_down):
+    def scroll_down_x_lines(self, lines_down):
         self.browser.execute_script(
             "window.scrollTo(0, " + str(lines_down) + ")")
 
@@ -44,7 +43,6 @@ class SeleniumAddons(ABC):
 
     def is_present(self, element_object):
         try:
-            # browser.find_element_by_css_selector("div")
             if element_object.is_displayed():
                 return True
         except:
@@ -97,7 +95,7 @@ class SeleniumAddons(ABC):
 
 class CustomChrome(SeleniumAddons):
 
-    def __init__(self, incognito=True, headless=False, brave=False, disable_gpu=False) -> None:
+    def __init__(self, incognito=True, path_to_chrome=None, brave=False, disable_gpu=False, window_size=False) -> None:
         options = ChromeOptions()
 
         # https://stackoverflow.com/questions/64927909/failed-to-read-descriptor-from-node-connection-a-device-attached-to-the-system
@@ -110,19 +108,22 @@ class CustomChrome(SeleniumAddons):
             options.add_argument("headless")
         if disable_gpu:
             options.add_argument("disable-gpu")
-        # options.add_argument('window-size=1200x1200')
+        if window_size:
+            options.add_argument('window-size=1200x1200')
         # options.add_argument("remote-debugging-port=9222")
         # options.add_argument("kiosk")
 
-        if os.name == 'nt':
-            # path_to_chrome = str(Path('./chromedriver.exe').relative_to('.'))
-            path_to_chrome = str(Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
-        elif os.name == 'darwin':
-            path_to_chrome = str(Path('./ChromeDrivers/Mac/chromedriver').absolute())
-        elif os.name == 'posix':
-            path_to_chrome = str(Path('./ChromeDrivers/Linux/chromedriver').absolute())
-        else:
-            raise UnrecognizedOSError('Unable to recogized Operating System')
+        if path_to_chrome is None:
+            if os.name == 'nt':
+                # path_to_chrome = str(Path('./chromedriver.exe').relative_to('.'))
+                path_to_chrome = str(Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
+            elif os.name == 'darwin':
+                path_to_chrome = str(Path('./ChromeDrivers/Mac/chromedriver').absolute())
+            elif os.name == 'posix':
+                path_to_chrome = str(Path('./ChromeDrivers/Linux/chromedriver').absolute())
+            else:
+                raise UnrecognizedOSError('Unable to recogized Operating System')
+
         self.browser = Chrome(path_to_chrome, options=options)
 
 class CustomBrave(SeleniumAddons):
