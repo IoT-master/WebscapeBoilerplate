@@ -95,7 +95,7 @@ class SeleniumAddons(ABC):
 
 class CustomChrome(SeleniumAddons):
 
-    def __init__(self, incognito=True, path_to_chrome=None, brave=False, disable_gpu=False, window_size=False) -> None:
+    def __init__(self, incognito=True, path_to_chrome=None, headless=False, disable_gpu=False, window_size=False) -> None:
         options = ChromeOptions()
 
         # https://stackoverflow.com/questions/64927909/failed-to-read-descriptor-from-node-connection-a-device-attached-to-the-system
