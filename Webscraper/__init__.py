@@ -8,16 +8,19 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 # TODO: Buildout FirefoxProfile
 # from selenium.webdriver import FirefoxProfile
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, ElementNotInteractableException
 from pathlib import Path
 import os
 from abc import ABC
 
+
 class UnrecognizedOSError(NotImplementedError):
     pass
 
+
 class ElementNotFound(Exception):
     pass
+
 
 class SimpleLocator:
     def __init__(self, locator):
@@ -29,22 +32,51 @@ class SimpleLocator:
         except NoSuchElementException:
             return False
 
+
+class Clickable:
+    def __init__(self, locator):
+        self.locator = locator
+
+    def __call__(self, browser):
+        try:
+            return browser.find_element(*self.locator).is_enabled()
+        except StaleElementReferenceException:
+            return False
+        except ElementNotInteractableException:
+            return False
+
+
 class SeleniumAddons(ABC):
 
     def __init__(self) -> None:
         super().__init__()
         self.browser = WebDriver()
 
-    def scroll_down_x_lines(self, lines_down):
-        self.browser.execute_script(
-            "window.scrollTo(0, " + str(lines_down) + ")")
+    def highlight_element(self, element, border='1', border_color='red', bg_color='yellow'):
+        s = f"background: {bg_color}; border: {border}px solid {border_color};"
+        driver = element._parent
+        driver.execute_script(
+            "arguments[0].setAttribute('style', arguments[1]);", element, s)
 
     def drag_and_drop(self, source_element_object, destination_element_object):
         ActionChains(self.browser).drag_and_drop(
             source_element_object, destination_element_object).perform()
 
-    def hover_over(self, element_object):
+    def scroll_and_moves_mouse_to(self, element_object):
         ActionChains(self.browser).move_to_element(element_object).perform()
+
+    def scroll_to(self, lines_down, lines_right=0):
+        self.browser.execute_script(
+            f"window.scrollTo({lines_right}, {lines_down})")
+
+    def scroll_to_element_location(self, element_object):
+        coord = element_object.location
+        self.browser.execute_script(
+            "window.scrollTo(arguments[0], arguments[1]);", coord['x'], coord['y'])
+
+    def scroll_into_view(self, element_object):
+        self.browser.execute_script(
+            "arguments[0].scrollIntoView();", element_object)
 
     def is_present(self, element_object):
         try:
@@ -59,12 +91,22 @@ class SeleniumAddons(ABC):
 
     def wait_for_possible_element(self, partial_dom, locator, wait_time=10):
         wait = WebDriverWait(partial_dom, wait_time)
-        wait.until(SimpleLocator(locator))        
+        wait.until(SimpleLocator(locator))
 
     def wait_until_css_element_object_found(self, partial_dom, css_param, wait_time=10):
         wait = WebDriverWait(partial_dom, wait_time)
         wait.until(EC.visibility_of_element_located(
             (By.CSS_SELECTOR, css_param)))
+
+    def wait_until_css_elements_object_found(self, partial_dom, css_param_list, wait_time=10):
+        wait = WebDriverWait(partial_dom, wait_time)
+        for css_param in css_param_list:
+            wait.until(EC.visibility_of_element_located(
+                (By.CSS_SELECTOR, css_param)))
+
+    def wait_until_css_element_object_is_clickable(self, partial_dom, css_param, wait_time=10):
+        wait = WebDriverWait(partial_dom, wait_time)
+        wait.until(Clickable((By.CSS_SELECTOR, css_param)))
 
     def wait_until_name_element_object_found(self, partial_dom, name_param, wait_time=10):
         wait = WebDriverWait(partial_dom, wait_time)
@@ -99,13 +141,14 @@ class SeleniumAddons(ABC):
             if option.text in labels:
                 option.click()
                 break
-    
+
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
         print('Closing browser instance')
         self.browser.quit()
+
 
 class CustomChrome(SeleniumAddons):
 
@@ -131,15 +174,20 @@ class CustomChrome(SeleniumAddons):
         if path_to_chrome is None:
             if os.name == 'nt':
                 # path_to_chrome = str(Path('./chromedriver.exe').relative_to('.'))
-                path_to_chrome = str(Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
+                path_to_chrome = str(
+                    Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
             elif os.name == 'darwin':
-                path_to_chrome = str(Path('./ChromeDrivers/Mac/chromedriver').absolute())
+                path_to_chrome = str(
+                    Path('./ChromeDrivers/Mac/chromedriver').absolute())
             elif os.name == 'posix':
-                path_to_chrome = str(Path('./ChromeDrivers/Linux/chromedriver').absolute())
+                path_to_chrome = str(
+                    Path('./ChromeDrivers/Linux/chromedriver').absolute())
             else:
-                raise UnrecognizedOSError('Unable to recogized Operating System')
+                raise UnrecognizedOSError(
+                    'Unable to recogized Operating System')
 
         self.browser = Chrome(path_to_chrome, options=options)
+
 
 class CustomBrave(SeleniumAddons):
 
@@ -155,16 +203,21 @@ class CustomBrave(SeleniumAddons):
             options.add_argument("disable-gpu")
 
         if os.name == 'nt':
-            path_to_chrome = str(Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
-            options.binary_location = str(Path('/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe'))
+            path_to_chrome = str(
+                Path('./ChromeDrivers/Windows/chromedriver.exe').absolute())
+            options.binary_location = str(
+                Path('/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe'))
         elif os.name == 'darwin':
-            path_to_chrome = str(Path('./ChromeDrivers/Mac/chromedriver').absolute())
+            path_to_chrome = str(
+                Path('./ChromeDrivers/Mac/chromedriver').absolute())
         elif os.name == 'posix':
             options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-            path_to_chrome = str(Path('./ChromeDrivers/Linux/chromedriver').absolute())
+            path_to_chrome = str(
+                Path('./ChromeDrivers/Linux/chromedriver').absolute())
         else:
             raise UnrecognizedOSError('Unable to recogized Operating System')
         self.browser = Chrome(path_to_chrome, options=options)
+
 
 class CustomFirefox(SeleniumAddons):
 
@@ -177,15 +230,16 @@ class CustomFirefox(SeleniumAddons):
 
         if os.name == 'nt':
             if geckodriver_path is None:
-                geckodriver_path = str(Path('./FirefoxDrivers/Windows/geckodriver.exe').absolute())
+                geckodriver_path = str(
+                    Path('./FirefoxDrivers/Windows/geckodriver.exe').absolute())
             if service_log_path is None:
-                service_log_path = str(Path('./FirefoxDrivers/Windows/gecko.log').absolute())
+                service_log_path = str(
+                    Path('./FirefoxDrivers/Windows/gecko.log').absolute())
         elif os.name == 'posix':
-            #TODO: Test out this case
-            raise UnrecognizedOSError('Selenium for Firefox not yet impliemented')
+            # TODO: Test out this case
+            raise UnrecognizedOSError(
+                'Selenium for Firefox not yet impliemented')
         else:
             raise UnrecognizedOSError('Unable to recogized Operating System')
-        self.browser = Firefox(executable_path=geckodriver_path, options=options, service_log_path=service_log_path)
-
-
-
+        self.browser = Firefox(executable_path=geckodriver_path,
+                               options=options, service_log_path=service_log_path)
