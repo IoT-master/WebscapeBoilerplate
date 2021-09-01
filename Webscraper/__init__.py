@@ -12,6 +12,7 @@ from selenium.common.exceptions import NoSuchElementException, StaleElementRefer
 from pathlib import Path
 import os
 from abc import ABC
+from PIL import Image
 
 
 class UnrecognizedOSError(NotImplementedError):
@@ -52,11 +53,11 @@ class SeleniumAddons(ABC):
         super().__init__()
         self.browser = WebDriver()
 
-    def highlight_element(self, element, border='1', border_color='red', bg_color='yellow'):
+    def highlight_element(self, element_object, border='1', border_color='red', bg_color='yellow'):
         s = f"background: {bg_color}; border: {border}px solid {border_color};"
-        driver = element._parent
+        driver = element_object._parent
         driver.execute_script(
-            "arguments[0].setAttribute('style', arguments[1]);", element, s)
+            "arguments[0].setAttribute('style', arguments[1]);", element_object, s)
 
     def drag_and_drop(self, source_element_object, destination_element_object):
         ActionChains(self.browser).drag_and_drop(
@@ -77,6 +78,21 @@ class SeleniumAddons(ABC):
     def scroll_into_view(self, element_object):
         self.browser.execute_script(
             "arguments[0].scrollIntoView();", element_object)
+
+    def remove_element_from_dom(self, element_object):
+        self.browser.execute_script("var element = arguments[0]; element.parentNode.removeChild(element);", element_object)
+
+    def screenshot_and_crop(self, element_object, filename="cropped_image.png"):
+        location = element_object.location
+        size = element_object.size
+        x = location['x']
+        y = location['y']
+        w = x + size['width']
+        h = y + size['height']
+        self.browser.save_screenshot(filename)
+        full_image = Image.open(filename)
+        cropped_image = full_image.crop((x, y, w, h))
+        cropped_image.save(filename)
 
     def is_present(self, element_object):
         try:
