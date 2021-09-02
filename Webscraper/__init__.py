@@ -53,6 +53,15 @@ class SeleniumAddons(ABC):
         super().__init__()
         self.browser = WebDriver()
 
+    def get_tag(self, element_object):
+        return element_object.tag_name
+
+    def get_attribute(self, element_object, attribute):
+        return element_object.get_attribute(attribute)
+        
+    def remove_elem(self, element_object):
+        self.browser.execute_script("arguments[0].remove()", element_object)
+
     def highlight_element(self, element_object, border='1', border_color='red', bg_color='yellow'):
         s = f"background: {bg_color}; border: {border}px solid {border_color};"
         driver = element_object._parent
