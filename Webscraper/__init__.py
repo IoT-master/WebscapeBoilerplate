@@ -261,9 +261,16 @@ class CustomFirefox(SeleniumAddons):
                 service_log_path = str(
                     Path('./FirefoxDrivers/Windows/gecko.log').absolute())
         elif os.name == 'posix':
-            # TODO: Test out this case
-            raise UnrecognizedOSError(
-                'Selenium for Firefox not yet impliemented')
+            # raise UnrecognizedOSError(
+            #     'Selenium for Firefox not yet impliemented')
+            if geckodriver_path is None:
+                geckodriver_path = str(
+                    Path("./FirefoxDrivers/Linux/geckodriver").absolute()
+                )
+            if service_log_path is None:
+                service_log_path = str(
+                    Path("./FirefoxDrivers/Linux/gecko.log").absolute()
+                )
         else:
             raise UnrecognizedOSError('Unable to recogized Operating System')
         self.browser = Firefox(executable_path=geckodriver_path,
