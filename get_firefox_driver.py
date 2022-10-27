@@ -38,5 +38,24 @@ else:
     file_resp = requests.get(url, allow_redirects=True)
     zip_file.write_bytes(file_resp.content)
     with tarfile.open(zip_file) as tar_ref:
-        tar_ref.extractall(save_dir)
+        def is_within_directory(directory, target):
+            
+            abs_directory = os.path.abspath(directory)
+            abs_target = os.path.abspath(target)
+        
+            prefix = os.path.commonprefix([abs_directory, abs_target])
+            
+            return prefix == abs_directory
+        
+        def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+        
+            for member in tar.getmembers():
+                member_path = os.path.join(path, member.name)
+                if not is_within_directory(path, member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
+        
+            tar.extractall(path, members, numeric_owner=numeric_owner) 
+            
+        
+        safe_extract(tar_ref, save_dir)
     zip_file.unlink()
